@@ -1,11 +1,11 @@
 # enetcppjs
 
-enet library ~~for [LeagueEmulatorJS](https://github.com/Karmel0x/LeagueEmulatorJS)~~ with nodejs bindings  
+enet library for [LeagueEmulatorJS](https://github.com/Karmel0x/LeagueEmulatorJS) with nodejs bindings  
 this bindings are written very bad, just for development purposes..  
 
 
 enet source:  
-[enet.bespin.org/download/enet-1.2.5.tar.gz](http://enet.bespin.org/download/enet-1.2.5.tar.gz)
+[github.com/LeagueSandbox/ENetSharpLeague/tree/indev/ENet](https://github.com/LeagueSandbox/ENetSharpLeague/tree/indev/ENet)
 
 
 # Todo
