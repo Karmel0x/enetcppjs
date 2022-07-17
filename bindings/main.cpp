@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string>
+#include <cstring>
 #include <enet/enet.h>
 #include <blowfish.h>
 #include <base64.h>
