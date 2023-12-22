@@ -113,9 +113,9 @@ data[29]  = "7654321 Now is the time for " (includes trailing '\0')
 data[29]  = 37363534333231204E6F77206973207468652074696D6520666F722000
 cbc cipher text
 cipher[32]= 6B77B4D63006DEE605B156E27403979358DEB9E7154616D959F1652BD5FF92CC
-cfb64 cipher text cipher[29]= 
-E73214A2822139CAF26ECF6D2EB9E76E3DA3DE04D1517200519D57A6C3 
-ofb64 cipher text cipher[29]= 
+cfb64 cipher text cipher[29]=
+E73214A2822139CAF26ECF6D2EB9E76E3DA3DE04D1517200519D57A6C3
+ofb64 cipher text cipher[29]=
 E73214A2822139CA62B343CC5B65587310DD908D0C241B2263C2CF80DA
 
 */
@@ -133,23 +133,21 @@ uint64 ntohll(uint64 a);
 
 
 //Block Structure
-struct SBlock
-{
+struct SBlock {
 	//Constructors
-	SBlock(unsigned int l=0, unsigned int r=0) : m_uil(l), m_uir(r) {}
+	SBlock(unsigned int l = 0, unsigned int r = 0) : m_uil(l), m_uir(r) {}
 	//Copy Constructor
 	SBlock(const SBlock& roBlock) : m_uil(roBlock.m_uil), m_uir(roBlock.m_uir) {}
 	SBlock& operator^=(SBlock& b) { m_uil ^= b.m_uil; m_uir ^= b.m_uir; return *this; }
 	unsigned int m_uil, m_uir;
 };
 
-class BlowFish
-{
+class BlowFish {
 public:
-	enum { ECB=0, CBC=1, CFB=2 };
+	enum { ECB = 0, CBC = 1, CFB = 2 };
 
 	//Constructor - Initialize the P and S boxes for a given Key
-	BlowFish(unsigned char* ucKey, size_t n, const SBlock& roChain = SBlock(0UL,0UL));
+	BlowFish(unsigned char* ucKey, size_t n, const SBlock& roChain = SBlock(0UL, 0UL));
 
 	//Resetting the chaining block
 	void ResetChain() { m_oChain = m_oChain0; }
@@ -159,16 +157,16 @@ public:
 	uint64 Decrypt(uint64 buf);
 
 	// Encrypt/Decrypt Buffer in Place
-	void Encrypt(unsigned char* buf, size_t n, int iMode=ECB);
-	void Decrypt(unsigned char* buf, size_t n, int iMode=ECB);
+	void Encrypt(unsigned char* buf, size_t n, int iMode = ECB);
+	void Decrypt(unsigned char* buf, size_t n, int iMode = ECB);
 
 	// Encrypt/Decrypt from Input Buffer to Output Buffer
-	void Encrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode=ECB);
-	void Decrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode=ECB);
+	void Encrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode = ECB);
+	void Decrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode = ECB);
 
-	unsigned char *getKey();
+	unsigned char* getKey();
 
-//Private Functions
+	//Private Functions
 private:
 	unsigned int F(unsigned int ui);
 	void Encrypt(SBlock&);
@@ -176,7 +174,7 @@ private:
 
 private:
 	//The Initialization Vector, by default {0, 0}
-	unsigned char *_keyCopy;
+	unsigned char* _keyCopy;
 	SBlock m_oChain0;
 	SBlock m_oChain;
 	unsigned int m_auiP[18];
@@ -186,15 +184,13 @@ private:
 };
 
 //Extract low order byte
-inline unsigned char Byte(unsigned int ui)
-{
+inline unsigned char Byte(unsigned int ui) {
 	return (unsigned char)(ui & 0xff);
 }
 
 //Function F
-inline unsigned int BlowFish::F(unsigned int ui)
-{
-	return ((m_auiS[0][Byte(ui>>24)] + m_auiS[1][Byte(ui>>16)]) ^ m_auiS[2][Byte(ui>>8)]) + m_auiS[3][Byte(ui)];
+inline unsigned int BlowFish::F(unsigned int ui) {
+	return ((m_auiS[0][Byte(ui >> 24)] + m_auiS[1][Byte(ui >> 16)]) ^ m_auiS[2][Byte(ui >> 8)]) + m_auiS[3][Byte(ui)];
 }
 
 #endif // __BLOWFISH_H__

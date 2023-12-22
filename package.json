@@ -1,0 +1,7 @@
+{
+  "name": "enetcppjs",
+  "main": "src/enet.js",
+  "devDependencies": {
+    "@types/node": "^20.10.5"
+  }
+}

@@ -1,10 +1,9 @@
 #include <general.h>
 
-float intlib::ntohf(const float f)
-{
+float intlib::ntohf(const float f) {
 	float retVal;
-	char *in = (char*)&f;
-	char *out = (char*)&retVal;
+	char* in = (char*)&f;
+	char* out = (char*)&retVal;
 
 	// swap the bytes into a temporary buffer
 	out[0] = in[3];
