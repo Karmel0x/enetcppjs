@@ -16,13 +16,23 @@
         "main.cpp"
       ],
       "include_dirs": [
-		'../enet/include',
-		'../intlib'
+        '../enet/include',
+        '../intlib'
       ],
       "cflags!": ["-fno-exceptions"],
       "cflags_cc!": ["-fno-exceptions"],
       "defines": ["NAPI_CPP_EXCEPTIONS", "ENET_CHECKSUM"],
-      "libraries": []
+      "conditions": [
+          ["OS == 'win'", {
+              "libraries": [
+                  "-lws2_32.lib",
+                  "-lwinmm.lib"
+              ]
+          }],
+          ["OS == 'linux'", {
+              "target_name": "enetcppjs-linux"
+          }]
+      ]
     }
   ]
 }
