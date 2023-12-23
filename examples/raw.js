@@ -1,5 +1,6 @@
 
 /** @type {import('../src/enet-wrapper').EnetWrapper} */
+// @ts-ignore
 const EnetWrapper = require('../bindings/build/Release/enetcppjs.node');
 
 function runServer() {

@@ -27,6 +27,10 @@ public:
         return true;
     }
 
+    static void freePacket(ENetPacket* packet) {
+        enet_packet_destroy(packet);
+    }
+
     ENetHost* enetHost;
     std::vector<ENetPeer*> peers;
     std::vector<BlowFish*> encrypters;
@@ -46,6 +50,13 @@ public:
         return true;
     }
 
+    void destroy() {
+        if (enetHost != nullptr) {
+            enet_host_destroy(enetHost);
+            enetHost = nullptr;
+        }
+    }
+
     ENetPeer* connect(uint16_t port = 5119, const char* host = "127.0.0.1") {
         enetHost = enet_host_create(nullptr, 1, 0, 0);
         if (enetHost == nullptr)
@@ -62,14 +73,28 @@ public:
         return peer;
     }
 
+    void disconnect(ENetPeer* peer, bool soon = false) {
+        if (peer != nullptr) {
+            if (soon)
+                enet_peer_disconnect_later(peer, 0);
+            else
+                enet_peer_disconnect(peer, 0);
+        }
+    }
+
+    void disconnect(unsigned int peerNum, bool soon = false) {
+        auto peer = peers[peerNum];
+        disconnect(peer, soon);
+    }
+
     bool send(ENetPeer* peer, unsigned char* source, size_t length, enet_uint8 channelID, enet_uint32 flag = ENET_PACKET_FLAG_RELIABLE) {
         if (peer == nullptr)
             return false;
 
-        int peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), peer));
+        auto peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), peer));
         encrypt(source, length, peerNum);
 
-        ENetPacket* packet = enet_packet_create(source, length, flag);
+        auto packet = enet_packet_create(source, length, flag);
         if (enet_peer_send(peer, channelID, packet) < 0)
             return false;
 
@@ -77,7 +102,7 @@ public:
     }
 
     bool send(unsigned int peerNum, unsigned char* source, size_t length, enet_uint8 channelID, enet_uint32 flag = ENET_PACKET_FLAG_RELIABLE) {
-        ENetPeer* peer = peers[peerNum];
+        auto peer = peers[peerNum];
         return send(peer, source, length, channelID, flag);
     }
 
@@ -95,11 +120,14 @@ public:
                 peers.push_back(event.peer);
                 encrypters.push_back(nullptr);
                 peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), event.peer));
+                //fprintf(stderr, "Peer %u connected.\n", peerNum);
                 break;
 
             case ENET_EVENT_TYPE_RECEIVE:
                 peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), event.peer));
                 decrypt(event.packet->data, event.packet->dataLength, peerNum);
+                //fprintf(stderr, "A packet of length %u was received from %u on channel %u.\n",
+                //    event.packet->dataLength, peerNum, event.channelID);
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
@@ -107,6 +135,7 @@ public:
                 peers[peerNum] = nullptr;
                 encrypters[peerNum] = nullptr;
                 delete event.peer->data;
+                //fprintf(stderr, "Peer %u disconnected.\n", peerNum);
                 break;
             }
         }
@@ -119,7 +148,7 @@ public:
 
     void encrypt(unsigned char* source, size_t length, int peerNum = 0) {
         if (length >= 8) {
-            BlowFish* blowfish = encrypters[peerNum];
+            auto blowfish = encrypters[peerNum];
             if (blowfish != nullptr)
                 blowfish->Encrypt(source, length - (length % 8)); // everything minus the last bytes that overflow the 8 byte boundary
         }
@@ -127,7 +156,7 @@ public:
 
     void decrypt(unsigned char* source, size_t length, int peerNum = 0) {
         if (length >= 8) {
-            BlowFish* blowfish = encrypters[peerNum];
+            auto blowfish = encrypters[peerNum];
             if (blowfish != nullptr)
                 blowfish->Decrypt(source, length - (length % 8)); // everything minus the last bytes that overflow the 8 byte boundary
         }
@@ -138,8 +167,10 @@ public:
     }
 
     void setBlowfish(int peerNum, std::string blowfishKey) {
-        if (blowfishKey.length() <= 0)
+        if (blowfishKey.length() <= 0) {
+            setBlowfish(peerNum, nullptr);
             return;
+        }
 
         if (encryptersMap.find(blowfishKey) == encryptersMap.end()) {
             std::string key = base64_decode(blowfishKey);
@@ -162,9 +193,9 @@ napi_value createSocket(napi_env env, napi_callback_info info) {
     EnetSocket::initialize();
     EnetSocket* socket = new EnetSocket();
 
-    napi_value socketValue;
-    napi_create_external(env, socket, nullptr, nullptr, &socketValue);
-    return socketValue;
+    napi_value socketAddress;
+    napi_create_external(env, socket, nullptr, nullptr, &socketAddress);
+    return socketAddress;
 }
 
 napi_value bind(napi_env env, napi_callback_info info) {
@@ -191,6 +222,19 @@ napi_value bind(napi_env env, napi_callback_info info) {
     napi_value value;
     napi_get_boolean(env, ret, &value);
     return value;
+}
+
+napi_value destroy(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    EnetSocket* socket;
+    napi_get_value_external(env, args[0], (void**)&socket);
+
+    socket->destroy();
+
+    return nullptr;
 }
 
 napi_value connect(napi_env env, napi_callback_info info) {
@@ -220,6 +264,25 @@ napi_value connect(napi_env env, napi_callback_info info) {
         napi_create_external(env, peer, nullptr, nullptr, &peerValue);
 
     return peerValue;
+}
+
+napi_value disconnect(napi_env env, napi_callback_info info) {
+    size_t argc = 3;
+    napi_value args[3];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    EnetSocket* socket;
+    napi_get_value_external(env, args[0], (void**)&socket);
+
+    unsigned int peerNum;
+    napi_get_value_uint32(env, args[1], &peerNum);
+
+    bool soon;
+    napi_get_value_bool(env, args[2], &soon);
+
+    socket->disconnect(peerNum, soon);
+
+    return nullptr;
 }
 
 napi_value send(napi_env env, napi_callback_info info) {
@@ -280,9 +343,9 @@ napi_value service(napi_env env, napi_callback_info info) {
             napi_create_uint32(env, event.channelID, &channelValue);
             napi_set_named_property(env, eventValue, "channel", channelValue);
 
-            //napi_value packetAddress;
-            //napi_create_external(env, event.packet, nullptr, nullptr, &packetAddress);
-            //napi_set_named_property(env, eventValue, "packet", packetAddress);
+            napi_value packetAddress;
+            napi_create_external(env, event.packet, nullptr, nullptr, &packetAddress);
+            napi_set_named_property(env, eventValue, "packet", packetAddress);
 
             napi_value dataValue;
             napi_create_external_arraybuffer(env, event.packet->data, event.packet->dataLength, nullptr, nullptr, &dataValue);
@@ -293,10 +356,18 @@ napi_value service(napi_env env, napi_callback_info info) {
     return eventValue;
 }
 
-//void freePacket(napi_env env, void* finalize_data, void* finalize_hint) {
-//    ENetPacket* packet = (ENetPacket*)finalize_data;
-//    enet_packet_destroy(packet);
-//}
+napi_value freePacket(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    ENetPacket* packet;
+    napi_get_value_external(env, args[0], (void**)&packet);
+
+    EnetSocket::freePacket(packet);
+
+    return nullptr;
+}
 
 napi_value setBlowfish(napi_env env, napi_callback_info info) {
     size_t argc = 3;
@@ -326,10 +397,12 @@ napi_value Init(napi_env env, napi_value exports) {
     napi_property_descriptor descriptors[] = {
         { "createSocket", 0, createSocket, 0, 0, 0, napi_default, 0 },
         { "bind", 0, bind, 0, 0, 0, napi_default, 0 },
+        { "destroy", 0, destroy, 0, 0, 0, napi_default, 0 },
         { "connect", 0, connect, 0, 0, 0, napi_default, 0 },
+        { "disconnect", 0, disconnect, 0, 0, 0, napi_default, 0 },
         { "send", 0, send, 0, 0, 0, napi_default, 0 },
         { "service", 0, service, 0, 0, 0, napi_default, 0 },
-        //{ "freePacket", 0, 0, 0, 0, 0, napi_default, freePacket },
+        { "freePacket", 0, freePacket, 0, 0, 0, napi_default, 0 },
         { "setBlowfish", 0, setBlowfish, 0, 0, 0, napi_default, 0 },
     };
     napi_define_properties(env, exports, sizeof(descriptors) / sizeof(*descriptors), descriptors);

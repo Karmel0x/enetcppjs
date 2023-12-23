@@ -16,4 +16,4 @@ UpgradeLog.htm
 
 node_modules/
 package-lock.json
-#bindings/build/*.*
+bindings/build/*.*

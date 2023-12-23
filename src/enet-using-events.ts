@@ -5,7 +5,7 @@ import { eventType } from './enet-wrapper';
 interface IEnetSocketEventHandlers {
     'connect': (peerNum: number) => void;
     'disconnect': (peerNum: number) => void;
-    'receive': (peerNum: number, channel: number, data: ArrayBuffer) => void;
+    'receive': (peerNum: number, data: ArrayBuffer, channel: number) => void;
 }
 
 export class EnetSocketUsingEvents extends EnetSocket {
@@ -21,7 +21,12 @@ export class EnetSocketUsingEvents extends EnetSocket {
                 this.emit('disconnect', msg.peerNum);
             }
             else if (msg.type === eventType.receive) {
-                this.emit('receive', msg.peerNum, msg.channel, msg.data);
+                this.emit('receive', msg.peerNum, msg.data, msg.channel);
+
+                // TODO
+                //setTimeout(() => {
+                //    EnetSocket.freePacket(msg.packet);
+                //}, 0);
             }
         });
     }

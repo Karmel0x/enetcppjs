@@ -1,10 +1,11 @@
 
 // reference file: '../bindings/main.cpp'
+// @ts-ignore
 import enetcppjs from '../bindings/build/Release/enetcppjs.node';
 
 export interface EnetSocketAddress { }
 export interface EnetPeerAddress { }
-//export interface EnetPacketAddress { }
+export interface EnetPacketAddress { }
 
 export const packetFlag = {
   /** packet must be received by the target peer and resend attempts should be
@@ -51,17 +52,20 @@ export type ENetEvent = {
 } | {
   type: typeof eventType.receive;
   peerNum: number;
-  channel: number;
   data: ArrayBuffer;
+  channel: number;
+  packet: EnetPacketAddress;
 };
 
 export interface EnetWrapper {
   createSocket(): EnetSocketAddress;
   bind(enetWrapper: EnetSocketAddress, port: number, ip: string): boolean;
+  destroy(enetWrapper: EnetSocketAddress): void;
   connect(enetWrapper: EnetSocketAddress, port: number, ip: string): EnetPeerAddress | undefined;
+  disconnect(enetWrapper: EnetSocketAddress, peerNum: number, soon: boolean): void;
   send(enetWrapper: EnetSocketAddress, peerNum: number, data: ArrayBufferLike, channel: number, flag: PacketFlag): boolean;
   service(enetWrapper: EnetSocketAddress): ENetEvent;
-  //freePacket(packet: EnetPacketAddress): void;
+  freePacket(packet: EnetPacketAddress): void;
   setBlowfish(enetWrapper: EnetSocketAddress, peerNum: number, base64Key: string): void;
 }
 

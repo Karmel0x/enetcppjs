@@ -1,5 +1,5 @@
 
-import EnetWrapper, { ENetEvent, EnetSocketAddress, eventType, packetFlag } from './enet-wrapper';
+import EnetWrapper, { ENetEvent, EnetPacketAddress, EnetSocketAddress, eventType, packetFlag } from './enet-wrapper';
 
 export async function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -10,10 +10,10 @@ export class EnetSocket {
     static packetFlag = packetFlag;
     static eventType = eventType;
 
-    // TODO
-    //static freePacket(packet: EnetPacketAddress){
-    //    EnetWrapper.freePacket(packet);
-    //}
+    static freePacket(packet: EnetPacketAddress) {
+        // should be called after packet data is processed
+        EnetWrapper.freePacket(packet);
+    }
 
     socket;
     netLoopRunning = false;
@@ -28,12 +28,21 @@ export class EnetSocket {
             throw new Error("Failed to bind socket");
     }
 
+    destroy() {
+        this.netLoopRunning = false;
+        EnetWrapper.destroy(this.socket);
+    }
+
     connect(port: number, ip: string) {
         // peer is not null even if connection fails
         // service will emit connect or disconnect event
         let peer = EnetWrapper.connect(this.socket, port, ip);
         if (!peer)
             throw new Error("Failed to connect socket");
+    }
+
+    disconnect(peerNum: number, soon: boolean = false) {
+        EnetWrapper.disconnect(this.socket, peerNum, soon);
     }
 
     send(peerNum: number, data: ArrayBufferLike, channel: number = 0, flag: number = packetFlag.reliable) {
@@ -52,6 +61,9 @@ export class EnetSocket {
         this.netLoopRunning = true;
 
         for (; ;) {
+            if (!this.netLoopRunning)
+                break;
+
             let msg = this.service();
             if (!msg.type) {
                 await delay(1);
