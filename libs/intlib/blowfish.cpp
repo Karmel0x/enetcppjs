@@ -1,15 +1,14 @@
 #include <cstring>
 #include <blowfish.h>
 
-uint64 ntohll(uint64 a)
-{
-	a = ((a & 0x00000000000000FFULL) << 56) | 
-		((a & 0x000000000000FF00ULL) << 40) | 
-		((a & 0x0000000000FF0000ULL) << 24) | 
-		((a & 0x00000000FF000000ULL) <<  8) | 
-		((a & 0x000000FF00000000ULL) >>  8) | 
-		((a & 0x0000FF0000000000ULL) >> 24) | 
-		((a & 0x00FF000000000000ULL) >> 40) | 
+uint64 ntohll(uint64 a) {
+	a = ((a & 0x00000000000000FFULL) << 56) |
+		((a & 0x000000000000FF00ULL) << 40) |
+		((a & 0x0000000000FF0000ULL) << 24) |
+		((a & 0x00000000FF000000ULL) << 8) |
+		((a & 0x000000FF00000000ULL) >> 8) |
+		((a & 0x0000FF0000000000ULL) >> 24) |
+		((a & 0x00FF000000000000ULL) >> 40) |
 		((a & 0xFF00000000000000ULL) >> 56);
 	return a;
 }
@@ -291,16 +290,14 @@ const unsigned int BlowFish::scm_auiInitS[4][256] = {
 	0xb74e6132, 0xce77e25b, 0x578fdfe3, 0x3ac372e6}
 };
 
-unsigned char *BlowFish::getKey()
-{
+unsigned char* BlowFish::getKey() {
 	return _keyCopy;
 }
 
 //Constructor - Initialize the P and S boxes for a given Key
-BlowFish::BlowFish(unsigned char* ucKey, size_t keysize, const SBlock& roChain) : m_oChain0(roChain), m_oChain(roChain)
-{
+BlowFish::BlowFish(unsigned char* ucKey, size_t keysize, const SBlock& roChain) : m_oChain0(roChain), m_oChain(roChain) {
 	//Check the Key - the key length should be between 1 and 56 bytes
-	if(keysize>56)
+	if (keysize > 56)
 		keysize = 56;
 	unsigned char aucLocalKey[56];
 	unsigned int i, j;
@@ -316,20 +313,17 @@ BlowFish::BlowFish(unsigned char* ucKey, size_t keysize, const SBlock& roChain) 
 	memcpy(m_auiS, scm_auiInitS, sizeof m_auiS);
 	//Load P boxes with key bytes
 	const unsigned char* p = aucLocalKey;
-	unsigned int x=0;
+	unsigned int x = 0;
 	//Repeatedly cycle through the key bits until the entire P array has been XORed with key bits
 	int iCount = 0;
-	for(i=0; i<18; i++)
-	{
-		x=0;
-		for(int n=4; n--; )
-		{
+	for (i = 0; i < 18; i++) {
+		x = 0;
+		for (int n = 4; n--; ) {
 			int iVal = (int)(*p);
 			x <<= 8;
 			x |= *(p++);
 			iCount++;
-			if(iCount == keysize)
-			{
+			if (iCount == keysize) {
 				//All bytes used, so recycle bytes 
 				iCount = 0;
 				p = aucLocalKey;
@@ -338,48 +332,46 @@ BlowFish::BlowFish(unsigned char* ucKey, size_t keysize, const SBlock& roChain) 
 		m_auiP[i] ^= x;
 	}
 	//Reflect P and S boxes through the evolving Blowfish
-	SBlock block(0UL,0UL); //all-zero block
-	for(i=0; i<18; )
+	SBlock block(0UL, 0UL); //all-zero block
+	for (i = 0; i < 18; )
 		Encrypt(block), m_auiP[i++] = block.m_uil, m_auiP[i++] = block.m_uir;
-	for(j=0; j<4; j++)
-		for(int k=0; k<256; )
+	for (j = 0; j < 4; j++)
+		for (int k = 0; k < 256; )
 			Encrypt(block), m_auiS[j][k++] = block.m_uil, m_auiS[j][k++] = block.m_uir;
 }
 
-uint64 BlowFish::Encrypt(uint64 buf)
-{
+uint64 BlowFish::Encrypt(uint64 buf) {
 	buf = ntohll(buf);
 	unsigned int uiLeft = HIDWORD(buf), uiRight = LODWORD(buf);
 
 	uiLeft ^= m_auiP[0];
-	uiRight ^= F(uiLeft)^m_auiP[1]; uiLeft ^= F(uiRight)^m_auiP[2];
-	uiRight ^= F(uiLeft)^m_auiP[3]; uiLeft ^= F(uiRight)^m_auiP[4];
-	uiRight ^= F(uiLeft)^m_auiP[5]; uiLeft ^= F(uiRight)^m_auiP[6];
-	uiRight ^= F(uiLeft)^m_auiP[7]; uiLeft ^= F(uiRight)^m_auiP[8];
-	uiRight ^= F(uiLeft)^m_auiP[9]; uiLeft ^= F(uiRight)^m_auiP[10];
-	uiRight ^= F(uiLeft)^m_auiP[11]; uiLeft ^= F(uiRight)^m_auiP[12];
-	uiRight ^= F(uiLeft)^m_auiP[13]; uiLeft ^= F(uiRight)^m_auiP[14];
-	uiRight ^= F(uiLeft)^m_auiP[15]; uiLeft ^= F(uiRight)^m_auiP[16];
+	uiRight ^= F(uiLeft) ^ m_auiP[1]; uiLeft ^= F(uiRight) ^ m_auiP[2];
+	uiRight ^= F(uiLeft) ^ m_auiP[3]; uiLeft ^= F(uiRight) ^ m_auiP[4];
+	uiRight ^= F(uiLeft) ^ m_auiP[5]; uiLeft ^= F(uiRight) ^ m_auiP[6];
+	uiRight ^= F(uiLeft) ^ m_auiP[7]; uiLeft ^= F(uiRight) ^ m_auiP[8];
+	uiRight ^= F(uiLeft) ^ m_auiP[9]; uiLeft ^= F(uiRight) ^ m_auiP[10];
+	uiRight ^= F(uiLeft) ^ m_auiP[11]; uiLeft ^= F(uiRight) ^ m_auiP[12];
+	uiRight ^= F(uiLeft) ^ m_auiP[13]; uiLeft ^= F(uiRight) ^ m_auiP[14];
+	uiRight ^= F(uiLeft) ^ m_auiP[15]; uiLeft ^= F(uiRight) ^ m_auiP[16];
 	uiRight ^= m_auiP[17];
 
 	buf = MAKEDWORDLONG(uiLeft, uiRight);
 	return ntohll(buf);
 }
 
-uint64 BlowFish::Decrypt(uint64 buf)
-{
+uint64 BlowFish::Decrypt(uint64 buf) {
 	buf = ntohll(buf);
 	unsigned int uiLeft = HIDWORD(buf), uiRight = LODWORD(buf);
 
 	uiLeft ^= m_auiP[17];
-	uiRight ^= F(uiLeft)^m_auiP[16]; uiLeft ^= F(uiRight)^m_auiP[15];
-	uiRight ^= F(uiLeft)^m_auiP[14]; uiLeft ^= F(uiRight)^m_auiP[13];
-	uiRight ^= F(uiLeft)^m_auiP[12]; uiLeft ^= F(uiRight)^m_auiP[11];
-	uiRight ^= F(uiLeft)^m_auiP[10]; uiLeft ^= F(uiRight)^m_auiP[9];
-	uiRight ^= F(uiLeft)^m_auiP[8]; uiLeft ^= F(uiRight)^m_auiP[7];
-	uiRight ^= F(uiLeft)^m_auiP[6]; uiLeft ^= F(uiRight)^m_auiP[5];
-	uiRight ^= F(uiLeft)^m_auiP[4]; uiLeft ^= F(uiRight)^m_auiP[3];
-	uiRight ^= F(uiLeft)^m_auiP[2]; uiLeft ^= F(uiRight)^m_auiP[1];
+	uiRight ^= F(uiLeft) ^ m_auiP[16]; uiLeft ^= F(uiRight) ^ m_auiP[15];
+	uiRight ^= F(uiLeft) ^ m_auiP[14]; uiLeft ^= F(uiRight) ^ m_auiP[13];
+	uiRight ^= F(uiLeft) ^ m_auiP[12]; uiLeft ^= F(uiRight) ^ m_auiP[11];
+	uiRight ^= F(uiLeft) ^ m_auiP[10]; uiLeft ^= F(uiRight) ^ m_auiP[9];
+	uiRight ^= F(uiLeft) ^ m_auiP[8]; uiLeft ^= F(uiRight) ^ m_auiP[7];
+	uiRight ^= F(uiLeft) ^ m_auiP[6]; uiLeft ^= F(uiRight) ^ m_auiP[5];
+	uiRight ^= F(uiLeft) ^ m_auiP[4]; uiLeft ^= F(uiRight) ^ m_auiP[3];
+	uiRight ^= F(uiLeft) ^ m_auiP[2]; uiLeft ^= F(uiRight) ^ m_auiP[1];
 	uiRight ^= m_auiP[0];
 
 	buf = MAKEDWORDLONG(uiLeft, uiRight);
@@ -387,46 +379,43 @@ uint64 BlowFish::Decrypt(uint64 buf)
 }
 
 //Sixteen Round Encipher of Block
-void BlowFish::Encrypt(SBlock& block)
-{
+void BlowFish::Encrypt(SBlock& block) {
 	unsigned int uiLeft = block.m_uil;
 	unsigned int uiRight = block.m_uir;
 	uiLeft ^= m_auiP[0];
-	uiRight ^= F(uiLeft)^m_auiP[1]; uiLeft ^= F(uiRight)^m_auiP[2];
-	uiRight ^= F(uiLeft)^m_auiP[3]; uiLeft ^= F(uiRight)^m_auiP[4];
-	uiRight ^= F(uiLeft)^m_auiP[5]; uiLeft ^= F(uiRight)^m_auiP[6];
-	uiRight ^= F(uiLeft)^m_auiP[7]; uiLeft ^= F(uiRight)^m_auiP[8];
-	uiRight ^= F(uiLeft)^m_auiP[9]; uiLeft ^= F(uiRight)^m_auiP[10];
-	uiRight ^= F(uiLeft)^m_auiP[11]; uiLeft ^= F(uiRight)^m_auiP[12];
-	uiRight ^= F(uiLeft)^m_auiP[13]; uiLeft ^= F(uiRight)^m_auiP[14];
-	uiRight ^= F(uiLeft)^m_auiP[15]; uiLeft ^= F(uiRight)^m_auiP[16];
+	uiRight ^= F(uiLeft) ^ m_auiP[1]; uiLeft ^= F(uiRight) ^ m_auiP[2];
+	uiRight ^= F(uiLeft) ^ m_auiP[3]; uiLeft ^= F(uiRight) ^ m_auiP[4];
+	uiRight ^= F(uiLeft) ^ m_auiP[5]; uiLeft ^= F(uiRight) ^ m_auiP[6];
+	uiRight ^= F(uiLeft) ^ m_auiP[7]; uiLeft ^= F(uiRight) ^ m_auiP[8];
+	uiRight ^= F(uiLeft) ^ m_auiP[9]; uiLeft ^= F(uiRight) ^ m_auiP[10];
+	uiRight ^= F(uiLeft) ^ m_auiP[11]; uiLeft ^= F(uiRight) ^ m_auiP[12];
+	uiRight ^= F(uiLeft) ^ m_auiP[13]; uiLeft ^= F(uiRight) ^ m_auiP[14];
+	uiRight ^= F(uiLeft) ^ m_auiP[15]; uiLeft ^= F(uiRight) ^ m_auiP[16];
 	uiRight ^= m_auiP[17];
 	block.m_uil = uiRight;
 	block.m_uir = uiLeft;
 }
 
 //Sixteen Round Decipher of SBlock
-void BlowFish::Decrypt(SBlock& block)
-{
+void BlowFish::Decrypt(SBlock& block) {
 	unsigned int uiLeft = block.m_uil;
 	unsigned int uiRight = block.m_uir;
 	uiLeft ^= m_auiP[17];
-	uiRight ^= F(uiLeft)^m_auiP[16]; uiLeft ^= F(uiRight)^m_auiP[15];
-	uiRight ^= F(uiLeft)^m_auiP[14]; uiLeft ^= F(uiRight)^m_auiP[13];
-	uiRight ^= F(uiLeft)^m_auiP[12]; uiLeft ^= F(uiRight)^m_auiP[11];
-	uiRight ^= F(uiLeft)^m_auiP[10]; uiLeft ^= F(uiRight)^m_auiP[9];
-	uiRight ^= F(uiLeft)^m_auiP[8]; uiLeft ^= F(uiRight)^m_auiP[7];
-	uiRight ^= F(uiLeft)^m_auiP[6]; uiLeft ^= F(uiRight)^m_auiP[5];
-	uiRight ^= F(uiLeft)^m_auiP[4]; uiLeft ^= F(uiRight)^m_auiP[3];
-	uiRight ^= F(uiLeft)^m_auiP[2]; uiLeft ^= F(uiRight)^m_auiP[1];
+	uiRight ^= F(uiLeft) ^ m_auiP[16]; uiLeft ^= F(uiRight) ^ m_auiP[15];
+	uiRight ^= F(uiLeft) ^ m_auiP[14]; uiLeft ^= F(uiRight) ^ m_auiP[13];
+	uiRight ^= F(uiLeft) ^ m_auiP[12]; uiLeft ^= F(uiRight) ^ m_auiP[11];
+	uiRight ^= F(uiLeft) ^ m_auiP[10]; uiLeft ^= F(uiRight) ^ m_auiP[9];
+	uiRight ^= F(uiLeft) ^ m_auiP[8]; uiLeft ^= F(uiRight) ^ m_auiP[7];
+	uiRight ^= F(uiLeft) ^ m_auiP[6]; uiLeft ^= F(uiRight) ^ m_auiP[5];
+	uiRight ^= F(uiLeft) ^ m_auiP[4]; uiLeft ^= F(uiRight) ^ m_auiP[3];
+	uiRight ^= F(uiLeft) ^ m_auiP[2]; uiLeft ^= F(uiRight) ^ m_auiP[1];
 	uiRight ^= m_auiP[0];
 	block.m_uil = uiRight;
 	block.m_uir = uiLeft;
 }
 
 //Semi-Portable Byte Shuffling
-inline void BytesToBlock(unsigned char const* p, SBlock& b)
-{
+inline void BytesToBlock(unsigned char const* p, SBlock& b) {
 	unsigned int y;
 	//Left
 	b.m_uil = 0;
@@ -456,8 +445,7 @@ inline void BytesToBlock(unsigned char const* p, SBlock& b)
 	b.m_uir |= y;
 }
 
-inline void BlockToBytes(SBlock const& b, unsigned char* p)
-{
+inline void BlockToBytes(SBlock const& b, unsigned char* p) {
 	unsigned int y;
 	//Right
 	y = b.m_uir;
@@ -481,164 +469,148 @@ inline void BlockToBytes(SBlock const& b, unsigned char* p)
 
 //Encrypt Buffer in Place
 //Returns false if n is multiple of 8
-void BlowFish::Encrypt(unsigned char* buf, size_t n, int iMode)
-{
+void BlowFish::Encrypt(unsigned char* buf, size_t n, int iMode) {
 	SBlock work;
-	if(iMode == CBC) //CBC mode, using the Chain
+	if (iMode == CBC) //CBC mode, using the Chain
 	{
 		SBlock chain(m_oChain);
-		for(; n >= 8; n -= 8)
-		{
+		for (; n >= 8; n -= 8) {
 			BytesToBlock(buf, work);
 			work ^= chain;
 			Encrypt(work);
 			chain = work;
-			BlockToBytes(work, buf+=8);
+			BlockToBytes(work, buf += 8);
 		}
 	}
-	else if(iMode == CFB) //CFB mode, using the Chain
+	else if (iMode == CFB) //CFB mode, using the Chain
 	{
 		SBlock chain(m_oChain);
-		for(; n >= 8; n -= 8)
-		{
+		for (; n >= 8; n -= 8) {
 			Encrypt(chain);
 			BytesToBlock(buf, work);
 			work ^= chain;
 			chain = work;
-			BlockToBytes(work, buf+=8);
+			BlockToBytes(work, buf += 8);
 		}
 	}
 	else //ECB mode, not using the Chain
 	{
-		for(; n >= 8; n -= 8)
-		{
+		for (; n >= 8; n -= 8) {
 			BytesToBlock(buf, work);
 			Encrypt(work);
-			BlockToBytes(work, buf+=8);
+			BlockToBytes(work, buf += 8);
 		}
 	}
 }
 
 //Decrypt Buffer in Place
 //Returns false if n is multiple of 8
-void BlowFish::Decrypt(unsigned char* buf, size_t n, int iMode)
-{
+void BlowFish::Decrypt(unsigned char* buf, size_t n, int iMode) {
 	SBlock work;
-	if(iMode == CBC) //CBC mode, using the Chain
+	if (iMode == CBC) //CBC mode, using the Chain
 	{
 		SBlock crypt, chain(m_oChain);
-		for(; n >= 8; n -= 8)
-		{
+		for (; n >= 8; n -= 8) {
 			BytesToBlock(buf, work);
 			crypt = work;
 			Decrypt(work);
 			work ^= chain;
 			chain = crypt;
-			BlockToBytes(work, buf+=8);
+			BlockToBytes(work, buf += 8);
 		}
 	}
-	else if(iMode == CFB) //CFB mode, using the Chain, not using Decrypt()
+	else if (iMode == CFB) //CFB mode, using the Chain, not using Decrypt()
 	{
 		SBlock crypt, chain(m_oChain);
-		for(; n >= 8; n -= 8)
-		{
+		for (; n >= 8; n -= 8) {
 			BytesToBlock(buf, work);
 			Encrypt(chain);
 			crypt = work;
 			work ^= chain;
 			chain = crypt;
-			BlockToBytes(work, buf+=8);
+			BlockToBytes(work, buf += 8);
 		}
 	}
 	else //ECB mode, not using the Chain
 	{
-		for(; n >= 8; n -= 8)
-		{
+		for (; n >= 8; n -= 8) {
 			BytesToBlock(buf, work);
 			Decrypt(work);
-			BlockToBytes(work, buf+=8);
+			BlockToBytes(work, buf += 8);
 		}
 	}
 }
 
 //Encrypt from Input Buffer to Output Buffer
 //Returns false if n is multiple of 8
-void BlowFish::Encrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode)
-{
+void BlowFish::Encrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode) {
 	SBlock work;
-	if(iMode == CBC) //CBC mode, using the Chain
+	if (iMode == CBC) //CBC mode, using the Chain
 	{
 		SBlock chain(m_oChain);
-		for(; n >= 8; n -= 8, in += 8)
-		{
+		for (; n >= 8; n -= 8, in += 8) {
 			BytesToBlock(in, work);
 			work ^= chain;
 			Encrypt(work);
 			chain = work;
-			BlockToBytes(work, out+=8);
+			BlockToBytes(work, out += 8);
 		}
 	}
-	else if(iMode == CFB) //CFB mode, using the Chain
+	else if (iMode == CFB) //CFB mode, using the Chain
 	{
 		SBlock chain(m_oChain);
-		for(; n >= 8; n -= 8, in += 8)
-		{
+		for (; n >= 8; n -= 8, in += 8) {
 			Encrypt(chain);
 			BytesToBlock(in, work);
 			work ^= chain;
 			chain = work;
-			BlockToBytes(work, out+=8);
+			BlockToBytes(work, out += 8);
 		}
 	}
 	else //ECB mode, not using the Chain
 	{
-		for(; n >= 8; n -= 8, in += 8)
-		{
+		for (; n >= 8; n -= 8, in += 8) {
 			BytesToBlock(in, work);
 			Encrypt(work);
-			BlockToBytes(work, out+=8);
+			BlockToBytes(work, out += 8);
 		}
 	}
 }
 
 //Decrypt from Input Buffer to Output Buffer
 //Returns false if n is multiple of 8
-void BlowFish::Decrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode)
-{
+void BlowFish::Decrypt(const unsigned char* in, unsigned char* out, size_t n, int iMode) {
 	SBlock work;
-	if(iMode == CBC) //CBC mode, using the Chain
+	if (iMode == CBC) //CBC mode, using the Chain
 	{
 		SBlock crypt, chain(m_oChain);
-		for(; n >= 8; n -= 8, in += 8)
-		{
+		for (; n >= 8; n -= 8, in += 8) {
 			BytesToBlock(in, work);
 			crypt = work;
 			Decrypt(work);
 			work ^= chain;
 			chain = crypt;
-			BlockToBytes(work, out+=8);
+			BlockToBytes(work, out += 8);
 		}
 	}
-	else if(iMode == CFB) //CFB mode, using the Chain, not using Decrypt()
+	else if (iMode == CFB) //CFB mode, using the Chain, not using Decrypt()
 	{
 		SBlock crypt, chain(m_oChain);
-		for(; n >= 8; n -= 8, in += 8)
-		{
+		for (; n >= 8; n -= 8, in += 8) {
 			BytesToBlock(in, work);
 			Encrypt(chain);
 			crypt = work;
 			work ^= chain;
 			chain = crypt;
-			BlockToBytes(work, out+=8);
+			BlockToBytes(work, out += 8);
 		}
 	}
 	else //ECB mode, not using the Chain
 	{
-		for(; n >= 8; n -= 8, in += 8)
-		{
+		for (; n >= 8; n -= 8, in += 8) {
 			BytesToBlock(in, work);
 			Decrypt(work);
-			BlockToBytes(work, out+=8);
+			BlockToBytes(work, out += 8);
 		}
 	}
 }
