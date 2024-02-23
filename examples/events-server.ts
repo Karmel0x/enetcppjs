@@ -3,7 +3,7 @@ import EnetUsingEvents from '../src/enet-using-events';
 
 const socket = EnetUsingEvents.createSocket();
 
-socket.bind(1234, "127.0.0.1");
+socket.bind(1234, '127.0.0.1');
 console.log('bind');
 
 socket.on('connect', (peerNum) => {

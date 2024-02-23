@@ -45,7 +45,9 @@
         "xtr1common": "cpp",
         "xutility": "cpp",
         "xtree": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "algorithm": "cpp",
+        "optional": "cpp"
     },
     "editor.formatOnSave": true
 }

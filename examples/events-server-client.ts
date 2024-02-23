@@ -1,14 +1,14 @@
 
-import { delay } from '../src/enet';
+import { delay } from '../src/utils';
 import EnetUsingEvents from '../src/enet-using-events';
 
 const server = EnetUsingEvents.createSocket();
 const client = EnetUsingEvents.createSocket();
 
-server.bind(1234, "127.0.0.1");
+server.bind(1234, '127.0.0.1');
 console.log('server.bind');
 
-client.connect(1234, "127.0.0.1");
+client.connect(1234, '127.0.0.1');
 console.log('client.connect');
 
 server.on('connect', (peerNum) => {

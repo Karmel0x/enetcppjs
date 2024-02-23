@@ -9,7 +9,7 @@
 
 struct EnetSocketEvent {
     ENetEvent event;
-    int peerNum;
+    unsigned int peerNum;
 };
 
 class EnetSocket {
@@ -38,7 +38,7 @@ public:
 
     EnetSocket() : enetHost(nullptr) {}
 
-    bool bind(uint16_t port = 5119, const char* host = "127.0.0.1") {
+    bool bind(uint16_t port, const char* host) {
         ENetAddress address;
         enet_address_set_host(&address, host);
         address.port = port;
@@ -57,7 +57,7 @@ public:
         }
     }
 
-    ENetPeer* connect(uint16_t port = 5119, const char* host = "127.0.0.1") {
+    ENetPeer* connect(uint16_t port, const char* host) {
         enetHost = enet_host_create(nullptr, 1, 0, 0);
         if (enetHost == nullptr)
             return nullptr;
@@ -87,55 +87,63 @@ public:
         disconnect(peer, soon);
     }
 
-    bool send(ENetPeer* peer, unsigned char* source, size_t length, enet_uint8 channelID, enet_uint32 flag = ENET_PACKET_FLAG_RELIABLE) {
+    bool sendData(ENetPeer* peer, unsigned char* data, size_t length, enet_uint8 channel, enet_uint32 flag = ENET_PACKET_FLAG_RELIABLE) {
         if (peer == nullptr)
             return false;
 
-        auto peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), peer));
-        encrypt(source, length, peerNum);
+        //fprintf(stderr, "sending %u bytes to %u on channel %u\n", length, peer, channel);
+        //fprintf(stderr, "bytes: ");
+        //for (int i = 0; i < length; i++)
+        //    fprintf(stderr, "%02x ", data[i]);
+        //fprintf(stderr, "\n");
 
-        auto packet = enet_packet_create(source, length, flag);
-        if (enet_peer_send(peer, channelID, packet) < 0)
+        auto packet = enet_packet_create(data, length, flag);
+        if (enet_peer_send(peer, channel, packet) != 0)
             return false;
 
         return true;
     }
 
-    bool send(unsigned int peerNum, unsigned char* source, size_t length, enet_uint8 channelID, enet_uint32 flag = ENET_PACKET_FLAG_RELIABLE) {
+    bool send(unsigned int peerNum, unsigned char* data, size_t length, enet_uint8 channel, enet_uint32 flag = ENET_PACKET_FLAG_RELIABLE) {
         auto peer = peers[peerNum];
-        return send(peer, source, length, channelID, flag);
+        if (peer == nullptr)
+            return false;
+
+        encrypt(data, length, peerNum);
+        //fprintf(stderr, "sending %u bytes to %u on channel %u\n", length, peerNum, channel);
+        return sendData(peer, data, length, channel, flag);
     }
 
     EnetSocketEvent service() {
         ENetEvent event;
-        int peerNum = 0;
+        unsigned int peerNum = 0;
 
         if (enet_host_service(enetHost, &event, 0) > 0) {
             switch (event.type) {
             case ENET_EVENT_TYPE_NONE:
                 break;
             case ENET_EVENT_TYPE_CONNECT:
+                //fprintf(stderr, "peer %u connected\n", event.peer);
                 event.peer->mtu = 996;
                 event.data = 0;
                 peers.push_back(event.peer);
                 encrypters.push_back(nullptr);
                 peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), event.peer));
-                //fprintf(stderr, "Peer %u connected.\n", peerNum);
                 break;
 
             case ENET_EVENT_TYPE_RECEIVE:
+                //fprintf(stderr, "packet of length %u was received from %u on channel %u\n",
+                //    event.packet->dataLength, event.peer, event.channelID);
                 peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), event.peer));
                 decrypt(event.packet->data, event.packet->dataLength, peerNum);
-                //fprintf(stderr, "A packet of length %u was received from %u on channel %u.\n",
-                //    event.packet->dataLength, peerNum, event.channelID);
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
+                //fprintf(stderr, "peer %u disconnected\n", event.peer);
                 peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), event.peer));
                 peers[peerNum] = nullptr;
                 encrypters[peerNum] = nullptr;
                 delete event.peer->data;
-                //fprintf(stderr, "Peer %u disconnected.\n", peerNum);
                 break;
             }
         }
@@ -146,27 +154,32 @@ public:
         return socketEvent;
     }
 
-    void encrypt(unsigned char* source, size_t length, int peerNum = 0) {
+    void encrypt(unsigned char* source, size_t length, unsigned int peerNum = 0) {
         if (length >= 8) {
             auto blowfish = encrypters[peerNum];
-            if (blowfish != nullptr)
+            if (blowfish != nullptr) {
+                //fprintf(stderr, "encrypting %u bytes\n", length);
                 blowfish->Encrypt(source, length - (length % 8)); // everything minus the last bytes that overflow the 8 byte boundary
+            }
         }
     }
 
-    void decrypt(unsigned char* source, size_t length, int peerNum = 0) {
+    void decrypt(unsigned char* source, size_t length, unsigned int peerNum = 0) {
         if (length >= 8) {
             auto blowfish = encrypters[peerNum];
-            if (blowfish != nullptr)
+            if (blowfish != nullptr) {
+                //fprintf(stderr, "decrypting %u bytes\n", length);
                 blowfish->Decrypt(source, length - (length % 8)); // everything minus the last bytes that overflow the 8 byte boundary
+            }
         }
     }
 
-    void setBlowfish(int peerNum, BlowFish* blowfish) {
+    void setBlowfish(unsigned int peerNum, BlowFish* blowfish) {
+        //fprintf(stderr, "setting blowfish for peer %u to %u\n", peerNum, blowfish);
         encrypters[peerNum] = blowfish;
     }
 
-    void setBlowfish(int peerNum, std::string blowfishKey) {
+    void setBlowfish(unsigned int peerNum, std::string blowfishKey) {
         if (blowfishKey.length() <= 0) {
             setBlowfish(peerNum, nullptr);
             return;
@@ -293,8 +306,8 @@ napi_value send(napi_env env, napi_callback_info info) {
     EnetSocket* socket;
     napi_get_value_external(env, args[0], (void**)&socket);
 
-    int peerNum;
-    napi_get_value_int32(env, args[1], &peerNum);
+    unsigned int peerNum;
+    napi_get_value_uint32(env, args[1], &peerNum);
 
     unsigned char* data;
     size_t length;
@@ -377,8 +390,8 @@ napi_value setBlowfish(napi_env env, napi_callback_info info) {
     EnetSocket* socket;
     napi_get_value_external(env, args[0], (void**)&socket);
 
-    int peerNum;
-    napi_get_value_int32(env, args[1], &peerNum);
+    unsigned int peerNum;
+    napi_get_value_uint32(env, args[1], &peerNum);
 
     char* key;
     size_t keyLength;

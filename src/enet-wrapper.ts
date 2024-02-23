@@ -2,6 +2,7 @@
 // reference file: '../bindings/main.cpp'
 // @ts-ignore
 import enetcppjs from '../bindings/build/Release/enetcppjs.node';
+//const enetcppjs = require('../bindings/build/Release/enetcppjs.node');
 
 export interface EnetSocketAddress { }
 export interface EnetPeerAddress { }

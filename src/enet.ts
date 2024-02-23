@@ -1,9 +1,6 @@
 
 import EnetWrapper, { ENetEvent, EnetPacketAddress, EnetSocketAddress, eventType, packetFlag } from './enet-wrapper';
-
-export async function delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+import { delay } from './utils';
 
 export class EnetSocket {
 

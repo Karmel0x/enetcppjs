@@ -1,8 +1,8 @@
 
-import Enet, { EnetSocket } from "../src/enet";
+import Enet, { EnetSocket } from '../src/enet';
 
 const enet = Enet.createSocket();
-enet.bind(1234, "127.0.0.1");
+enet.bind(1234, '127.0.0.1');
 console.log('bind');
 
 enet.netLoop((msg) => {
