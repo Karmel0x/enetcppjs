@@ -186,11 +186,11 @@ public:
         }
 
         if (encryptersMap.find(blowfishKey) == encryptersMap.end()) {
-            std::string key = base64_decode(blowfishKey);
+            std::string key = blowfishKey.length() == 16 ? blowfishKey : base64_decode(blowfishKey);
             if (key.length() <= 0)
                 return;
 
-            BlowFish* blowfish = new BlowFish((unsigned char*)key.c_str(), 16);
+            BlowFish* blowfish = new BlowFish((unsigned char*)key.c_str(), key.length());
             encryptersMap[blowfishKey] = blowfish;
         }
 
