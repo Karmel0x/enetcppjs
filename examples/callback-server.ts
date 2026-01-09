@@ -8,7 +8,7 @@ console.log('bind');
 enet.netLoop((msg) => {
     console.log('netLoop', msg);
 
-    if (msg.type == EnetSocket.eventType.connect) {
+    if (msg.type === EnetSocket.eventType.connect) {
         console.log('connected');
 
         let data = new Uint8Array([1, 2, 3]).buffer;

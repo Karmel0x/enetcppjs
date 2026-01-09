@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/utils.ts"],
+  "sourcesContent": ["\r\nexport function delay(ms: number) {\r\n    return new Promise(resolve => setTimeout(resolve, ms));\r\n}\r\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AACO,SAAS,MAAM,IAAY;AAC9B,SAAO,IAAI,QAAQ,aAAW,WAAW,SAAS,EAAE,CAAC;AACzD;AAFgB;",
+  "names": []
+}

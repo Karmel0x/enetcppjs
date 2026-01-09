@@ -16,4 +16,8 @@ UpgradeLog.htm
 
 node_modules/
 package-lock.json
-bindings/build/*.*
+CLAUDE.md
+
+bindings/build
+prebuilds/**/*.lib
+prebuilds/**/*.exp

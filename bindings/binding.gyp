@@ -21,15 +21,25 @@
         "cflags!": ["-fno-exceptions"],
         "cflags_cc!": ["-fno-exceptions"],
         "defines": ["NAPI_CPP_EXCEPTIONS", "ENET_CHECKSUM"],
+        "configurations": {
+            "Release": {
+                "msvs_settings": {
+                    "VCLinkerTool": {
+                        "GenerateDebugInformation": "false"
+                    }
+                }
+            }
+        },
         "conditions": [
             ["OS == 'win'", {
                 "libraries": [
                     "-lws2_32.lib",
                     "-lwinmm.lib"
-                ]
+                ],
+                "product_dir": "../prebuilds/win32-x64"
             }],
             ["OS == 'linux'", {
-                "target_name": "enetcppjs-linux"
+                "product_dir": "../prebuilds/linux-x64"
             }]
         ]
     }]

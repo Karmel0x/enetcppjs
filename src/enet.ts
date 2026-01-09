@@ -17,10 +17,12 @@ export class EnetSocket {
 
     constructor(socket: EnetSocketAddress | undefined = undefined) {
         this.socket = socket || EnetWrapper.createSocket();
+        if (!this.socket)
+            throw new Error('Failed to initialize enet socket');
     }
 
     bind(port: number, ip: string) {
-        let binded = EnetWrapper.bind(this.socket, port, ip);
+        const binded = EnetWrapper.bind(this.socket, port, ip);
         if (!binded)
             throw new Error("Failed to bind socket");
     }
@@ -33,7 +35,7 @@ export class EnetSocket {
     connect(port: number, ip: string) {
         // peer is not null even if connection fails
         // service will emit connect or disconnect event
-        let peer = EnetWrapper.connect(this.socket, port, ip);
+        const peer = EnetWrapper.connect(this.socket, port, ip);
         if (!peer)
             throw new Error("Failed to connect socket");
     }
@@ -42,8 +44,8 @@ export class EnetSocket {
         EnetWrapper.disconnect(this.socket, peerNum, soon);
     }
 
-    send(peerNum: number, data: ArrayBufferLike, channel: number = 0, flag: number = packetFlag.reliable) {
-        return EnetWrapper.send(this.socket, peerNum, data, channel, flag);
+    send(peerNum: number, data: ArrayBufferLike, channel: number = 0, flags: number = packetFlag.reliable) {
+        return EnetWrapper.send(this.socket, peerNum, data, channel, flags);
     }
 
     service() {
@@ -61,7 +63,7 @@ export class EnetSocket {
             if (!this.netLoopRunning)
                 break;
 
-            let msg = this.service();
+            const msg = this.service();
             if (!msg.type) {
                 await delay(1);
                 continue;

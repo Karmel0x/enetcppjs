@@ -11,8 +11,21 @@ check [examples](examples)
 
 # Build
 ```
-cd bindings
+# requires node.js and python3
 npm install -g node-gyp
+
+cd bindings
 node-gyp configure
-node-gyp build
+node-gyp build --release
 ```
+
+```
+cd ..
+npm run build
+```
+
+# Linux
+change `win32` to `linux` in `src\enet-wrapper.ts` and run `npm run build`
+
+# Todo
+- use `node-gyp-build` with `prebuildify`

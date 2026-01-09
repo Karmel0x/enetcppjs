@@ -1,8 +1,10 @@
 
 // reference file: '../bindings/main.cpp'
+
 // @ts-ignore
-import enetcppjs from '../bindings/build/Release/enetcppjs.node';
-//const enetcppjs = require('../bindings/build/Release/enetcppjs.node');
+import enetcppjs from '../bindings/prebuilds/win32-x64/enetcppjs.node';
+// @ts-ignore
+//import enetcppjs from '../bindings/prebuilds/linux-x64/enetcppjs.node';
 
 export interface EnetSocketAddress { }
 export interface EnetPeerAddress { }
@@ -64,7 +66,7 @@ export interface EnetWrapper {
   destroy(enetWrapper: EnetSocketAddress): void;
   connect(enetWrapper: EnetSocketAddress, port: number, ip: string): EnetPeerAddress | undefined;
   disconnect(enetWrapper: EnetSocketAddress, peerNum: number, soon: boolean): void;
-  send(enetWrapper: EnetSocketAddress, peerNum: number, data: ArrayBufferLike, channel: number, flag: PacketFlag): boolean;
+  send(enetWrapper: EnetSocketAddress, peerNum: number, data: ArrayBufferLike, channel: number, flags: PacketFlag): boolean;
   service(enetWrapper: EnetSocketAddress): ENetEvent;
   freePacket(packet: EnetPacketAddress): void;
   setBlowfish(enetWrapper: EnetSocketAddress, peerNum: number, base64Key: string): void;

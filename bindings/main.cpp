@@ -126,6 +126,7 @@ public:
                 //fprintf(stderr, "peer %u connected\n", event.peer);
                 event.peer->mtu = 996;
                 event.data = 0;
+                // @todo loop over peers to find nullptr
                 peers.push_back(event.peer);
                 encrypters.push_back(nullptr);
                 peerNum = std::distance(peers.begin(), std::find(peers.begin(), peers.end(), event.peer));
@@ -186,11 +187,11 @@ public:
         }
 
         if (encryptersMap.find(blowfishKey) == encryptersMap.end()) {
-            std::string key = base64_decode(blowfishKey);
+            std::string key = blowfishKey.length() == 16 ? blowfishKey : base64_decode(blowfishKey);
             if (key.length() <= 0)
                 return;
 
-            BlowFish* blowfish = new BlowFish((unsigned char*)key.c_str(), 16);
+            BlowFish* blowfish = new BlowFish((unsigned char*)key.c_str(), key.length());
             encryptersMap[blowfishKey] = blowfish;
         }
 
@@ -203,7 +204,9 @@ bool EnetSocket::initialized = false;
 #include <node_api.h>
 
 napi_value createSocket(napi_env env, napi_callback_info info) {
-    EnetSocket::initialize();
+    if (!EnetSocket::initialize())
+        return nullptr;
+
     EnetSocket* socket = new EnetSocket();
 
     napi_value socketAddress;
@@ -316,10 +319,11 @@ napi_value send(napi_env env, napi_callback_info info) {
     unsigned int channel;
     napi_get_value_uint32(env, args[3], &channel);
 
-    uint32_t flag;
-    napi_get_value_uint32(env, args[4], &flag);
+    uint32_t flags;
+    napi_get_value_uint32(env, args[4], &flags);
 
-    bool ret = socket->send(peerNum, data, length, channel, flag);
+    //fprintf(stderr, "send %u bytes to %u on channel %u with cmd %d\n", length, peerNum, channel, data[0]);
+    bool ret = socket->send(peerNum, data, length, channel, flags);
 
     napi_value value;
     napi_get_boolean(env, ret, &value);

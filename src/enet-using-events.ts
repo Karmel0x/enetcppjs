@@ -10,7 +10,7 @@ interface IEnetSocketEventHandlers {
 
 export class EnetSocketUsingEvents extends EnetSocket {
 
-    eventEmitter = new EventEmitter();
+    readonly eventEmitter = new EventEmitter();
 
     eventLoop() {
         super.netLoop((msg) => {
@@ -43,14 +43,22 @@ export class EnetSocketUsingEvents extends EnetSocket {
 
     on<T extends keyof IEnetSocketEventHandlers>(event: T, listener: IEnetSocketEventHandlers[T]) {
         this.eventEmitter.on(event, listener);
+        return this;
     }
 
     once<T extends keyof IEnetSocketEventHandlers>(event: T, listener: IEnetSocketEventHandlers[T]) {
         this.eventEmitter.once(event, listener);
+        return this;
+    }
+
+    off<T extends keyof IEnetSocketEventHandlers>(event: T, listener: IEnetSocketEventHandlers[T]) {
+        this.eventEmitter.off(event, listener);
+        return this;
     }
 
     emit<T extends keyof IEnetSocketEventHandlers>(event: T, ...args: Parameters<IEnetSocketEventHandlers[T]>) {
         this.eventEmitter.emit(event, ...args);
+        return this;
     }
 
 }
